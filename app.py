@@ -1,73 +1,18 @@
-# app.py
 from flask import Flask, request, jsonify, abort
+from blueprints.items import bp as items_bp
 
 app = Flask(__name__)
+app.register_blueprint(items_bp)
 
-# 1. Banco de dados em memória (lista de dicts)
-items = [
-    {'id': 1, 'name': 'Apple', 'price': 0.5},
-    {'id': 2, 'name': 'Banana', 'price': 0.3}
-]
+@app.route('/') #decorator
+def index():
+    return 'Hello, Flask!'
 
-def find_item(item_id):
-    """Busca um item pelo ID, retornando None se não existir."""
-    return next((item for item in items if item['id'] == item_id), None)
+@app.route('/ping')
+def ping():
+    data = {'message': 'pong'}
+    return jsonify(data), 200
 
-# 2. GET /items: retorna toda a lista
-@app.route('/items', methods=['GET'])
-def get_items():
-    return jsonify(items), 200
-
-# 3. GET /items/: retorna um único item
-@app.route('/items/<int:item_id>', methods=['GET'])
-def get_item(item_id):
-    item = find_item(item_id)
-    if not item:
-        abort(404, description='Item não encontrado')
-    return jsonify(item), 200
-
-# 4. POST /items: cria um novo item
-@app.route('/items', methods=['POST'])
-def create_item():
-    data = request.get_json()
-    # Validação básica
-    if not data or 'name' not in data or 'price' not in data:
-        abort(400, description='Dados inválidos')
-    new_id = max(item['id'] for item in items) + 1
-    item = {'id': new_id, 'name': data['name'], 'price': data['price']}
-    items.append(item)
-    return jsonify(item), 201
-
-# 5. PUT /items/: atualiza um item existente
-@app.route('/items/<int:item_id>', methods=['PUT'])
-def update_item(item_id):
-    item = find_item(item_id)
-    if not item:
-        abort(404, description='Item não encontrado')
-    data = request.get_json()
-    # Atualiza somente campos informados
-    for key in ('name', 'price'):
-        if key in data:
-            item[key] = data[key]
-    return jsonify(item), 200
-
-# 6. DELETE /items/: remove um item
-@app.route('/items/<int:item_id>', methods=['DELETE'])
-def delete_item(item_id):
-    item = find_item(item_id)
-    if not item:
-        abort(404, description='Item não encontrado')
-    items.remove(item)
-    return '', 204
-
-# 7. Error handlers personalizados
-@app.errorhandler(404)
-def not_found(e):
-    return jsonify({'error': str(e)}), 404
-
-@app.errorhandler(400)
-def bad_request(e):
-    return jsonify({'error': str(e)}), 400
 
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, host='0.0.0.0', port=5000)
